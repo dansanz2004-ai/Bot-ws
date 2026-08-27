@@ -2,11 +2,8 @@ FROM node:18-slim
 
 RUN apt-get update && apt-get install -y \
     chromium \
-    nss \
-    freetype \
-    harfbuzz \
+    fonts-freefont-ttf \
     ca-certificates \
-    ttf-freefont \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
@@ -14,10 +11,11 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
+COPY package.json ./
 RUN npm install
 
 COPY . .
 
-CMD ["npm", "start"]
+EXPOSE 3000
 
+CMD ["npm", "start"]
