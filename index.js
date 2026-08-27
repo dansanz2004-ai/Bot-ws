@@ -8,32 +8,25 @@ const port = process.env.PORT || 3000;
 let latestQR = '';
 let isConnected = false;
 
-// Nombre exacto de tu grupo y emoji de reacción:
-const NOMBRE_DEL_GRUPO = "Familia🫂"; 
-const EMOJI_REACCION = "🇮🇱";
-
 app.get('/', (req, res) => {
     if (isConnected) {
-        res.send(`<h1 style="text-align:center;font-family:sans-serif;margin-top:50px;color:green;">¡El bot está activo para el grupo: "${NOMBRE_DEL_GRUPO}"!</h1>`);
+        res.send('<h1 style="text-align:center;font-family:sans-serif;margin-top:50px;color:green;">¡El bot está activo y listo!</h1>');
     } else if (latestQR) {
         const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(latestQR)}&size=300x300`;
         res.send(`
             <html style="font-family:sans-serif;text-align:center;">
                 <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;">
-                    <h2>Escanea este código QR con WhatsApp:</h2>
+                    <h2>Escanea este nuevo código QR:</h2>
                     <img src="${qrImageUrl}" alt="Código QR" style="border: 2px solid #000; padding: 10px; border-radius: 10px; margin: 20px 0;" />
-                    <p style="color:#666;">Si vence, recarga esta página para ver uno nuevo.</p>
                 </body>
             </html>
         `);
     } else {
-        res.send('<h2 style="text-align:center;font-family:sans-serif;margin-top:50px;">Generando código QR... Recarga esta página en 10 segundos.</h2>');
+        res.send('<h2 style="text-align:center;font-family:sans-serif;margin-top:50px;">Cargando QR... Recarga en 10 segundos.</h2>');
     }
 });
 
-app.listen(port, () => {
-    console.log(`Servidor web activo en el puerto ${port}`);
-});
+app.listen(port, () => console.log(`Servidor en puerto ${port}`));
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -53,31 +46,35 @@ const client = new Client({
 });
 
 client.on('qr', (qr) => {
-    console.log('--- NUEVO CÓDIGO QR GENERADO ---');
     latestQR = qr;
     isConnected = false;
     qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
-    console.log('¡El bot está activo y conectado!');
+    console.log('¡Bot conectado exitosamente!');
     isConnected = true;
     latestQR = '';
 });
 
-// Detecta tanto tus propios mensajes como los de otros miembros del grupo
 client.on('message_create', async (msg) => {
     try {
         const chat = await msg.getChat();
         
-        // Comprueba si es un grupo y contiene la palabra "Familia" en su nombre
-        if (chat.isGroup && chat.name.includes('Familia')) {
-            await msg.react(EMOJI_REACCION);
+        if (chat.isGroup) {
+            console.log(`Mensaje detectado en el grupo: "${chat.name}"`);
+            
+            // Busca la palabra "familia" ignorando mayúsculas, minúsculas y emojis
+            if (chat.name.toLowerCase().includes('familia')) {
+                console.log('¡Coincidencia hallada! Reaccionando...');
+                await msg.react('🇮🇱');
+            }
         }
     } catch (error) {
-        console.error('Error al reaccionar:', error);
+        console.error('Error al intentar reaccionar:', error);
     }
 });
 
 client.initialize();
+
 
