@@ -1,22 +1,37 @@
-
-
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 
-// 1. Servidor web para que Render sepa que la aplicación está viva
 const app = express();
 const port = process.env.PORT || 3000;
 
+let latestQR = '';
+let isConnected = false;
+
+// Muestra el QR como una imagen nítida en la página web
 app.get('/', (req, res) => {
-    res.send('¡El Bot de WhatsApp está activo!');
+    if (isConnected) {
+        res.send('<h1 style="text-align:center;font-family:sans-serif;margin-top:50px;color:green;">¡El bot de WhatsApp está conectado y activo!</h1>');
+    } else if (latestQR) {
+        const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(latestQR)}&size=300x300`;
+        res.send(`
+            <html style="font-family:sans-serif;text-align:center;">
+                <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;">
+                    <h2>Escanea este código QR con WhatsApp:</h2>
+                    <img src="${qrImageUrl}" alt="Código QR" style="border: 2px solid #000; padding: 10px; border-radius: 10px; margin: 20px 0;" />
+                    <p style="color:#666;">Si vence, recarga esta página para ver uno nuevo.</p>
+                </body>
+            </html>
+        `);
+    } else {
+        res.send('<h2 style="text-align:center;font-family:sans-serif;margin-top:50px;">Generando código QR... Recarga esta página en 10 segundos.</h2>');
+    }
 });
 
 app.listen(port, () => {
     console.log(`Servidor web activo en el puerto ${port}`);
 });
 
-// 2. Configuración de WhatsApp con Chromium para la nube
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -34,29 +49,28 @@ const client = new Client({
     }
 });
 
-// 3. Generar el código QR en los registros (Logs)
 client.on('qr', (qr) => {
-    console.log('--- ESCANEA ESTE CÓDIGO QR ---');
+    console.log('--- NUEVO CÓDIGO QR GENERADO ---');
+    latestQR = qr;
+    isConnected = false;
     qrcode.generate(qr, { small: true });
 });
 
-// 4. Confirmación cuando conecta
 client.on('ready', () => {
-    console.log('¡El bot está activo y conectado en la nube!');
+    console.log('¡El bot está activo y conectado!');
+    isConnected = true;
+    latestQR = '';
 });
 
-// 5. Detectar mensajes del grupo y reaccionar
 client.on('message', async (msg) => {
     try {
         const chat = await msg.getChat();
-        // Si el mensaje es en un grupo, reacciona con el emoji
         if (chat.isGroup) {
-            await msg.react('👍'); // Puedes cambiar este emoji por el que gustes
+            await msg.react('🇮🇱');
         }
     } catch (error) {
         console.error('Error al reaccionar:', error);
     }
 });
 
-// Inicializar el cliente
 client.initialize();
