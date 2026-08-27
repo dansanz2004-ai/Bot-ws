@@ -8,10 +8,12 @@ const port = process.env.PORT || 3000;
 let latestQR = '';
 let isConnected = false;
 
-// Muestra el QR como una imagen nítida en la página web
+// AQUÍ ESCRIBE EL NOMBRE EXACTO DE TU GRUPO DE WHATSAPP:
+const NOMBRE_DEL_GRUPO = "Familia🫂"; 
+
 app.get('/', (req, res) => {
     if (isConnected) {
-        res.send('<h1 style="text-align:center;font-family:sans-serif;margin-top:50px;color:green;">¡El bot de WhatsApp está conectado y activo!</h1>');
+        res.send(`<h1 style="text-align:center;font-family:sans-serif;margin-top:50px;color:green;">¡El bot está activo y configurado para el grupo: "${NOMBRE_DEL_GRUPO}"!</h1>`);
     } else if (latestQR) {
         const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(latestQR)}&size=300x300`;
         res.send(`
@@ -62,11 +64,14 @@ client.on('ready', () => {
     latestQR = '';
 });
 
+// Detectar mensajes y reaccionar SOLO si coincide el nombre del grupo
 client.on('message', async (msg) => {
     try {
         const chat = await msg.getChat();
-        if (chat.isGroup) {
-            await msg.react('🇮🇱');
+        
+        // Verifica que sea un grupo Y que el nombre del grupo sea el correcto
+        if (chat.isGroup && chat.name === NOMBRE_DEL_GRUPO) {
+            await msg.react('👍'); // Puedes cambiar el emoji si lo deseas
         }
     } catch (error) {
         console.error('Error al reaccionar:', error);
